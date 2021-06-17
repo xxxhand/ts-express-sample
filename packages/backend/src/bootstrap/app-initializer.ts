@@ -31,7 +31,7 @@ export class AppInitializer {
 			poolSize: defMongo.POOL_SIZE,
 			dbName: defMongo.DB_NAME,
 		});
-		client.ignoreClearEnvironments('production');
+		client.ignoreClearEnvironments('production', 'prod');
 		await client.tryConnect();
 		// Load all orm models
 		LOGGER.info('Load all models');

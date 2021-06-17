@@ -1,19 +1,15 @@
-import { ParameterizedContext, Next } from 'koa';
-import Router from '@koa/router';
+import { Request, Response, NextFunction, Router } from 'express';
 import { CustomResult } from '@demo/app-common';
 import { ClientAuthRoute } from './client-auth-route';
-import { IStateResult } from '../../domain/types';
 
-const _router = new Router()
-	.prefix('/api/v1');
-
+const _router = Router();
 _router
-	.all('/', async (ctx: ParameterizedContext<IStateResult>, next: Next): Promise<void> => {
-		ctx.state.result = new CustomResult<string>().withResult('Hello world');
+	.all('/', async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+		res.locals['result'] = new CustomResult<string>().withResult('Hello world');
 		await next();
 	});
 
 _router
-	.use(ClientAuthRoute.build().routes());
+	.use(ClientAuthRoute.build());
 
 export default _router;

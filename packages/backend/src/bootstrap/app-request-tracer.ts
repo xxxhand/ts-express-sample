@@ -1,21 +1,19 @@
-import { ParameterizedContext, Next } from 'koa';
+import { Request, Response, NextFunction } from 'express';
 import { defaultNameSpace, CustomUtils, TNullable } from '@demo/app-common';
 
-export const forKoa = ({
-	useHeader = true,
-	headerName = 'X-Request-Id',
-} = {}) => (ctx: ParameterizedContext, next: Next) => {
-	defaultNameSpace.bindEmitter(ctx.req);
-	defaultNameSpace.bindEmitter(ctx.res);
+const _forExpress = ({ useHeader = true, headerName = 'X-Request-Id' } = {}) => (req: Request, res: Response, next: NextFunction) => {
+	defaultNameSpace.bindEmitter(req);
+	defaultNameSpace.bindEmitter(res);
 
 	let reqId: TNullable<string> = '';
 	if (useHeader) {
-		reqId = ctx.request.header[headerName.toLowerCase()] as TNullable<string>;
+		reqId = req.headers[headerName.toLowerCase()] as TNullable<string>;
 	}
 	reqId = reqId || CustomUtils.generateUUIDV4();
-
-	return new Promise(defaultNameSpace.bind((res, rej) => {
+	defaultNameSpace.run(() => {
 		defaultNameSpace.set('requestId', reqId);
-		return next().then(res).catch(rej);
-	}));
+		next();
+	});
 };
+
+export const handle = _forExpress;

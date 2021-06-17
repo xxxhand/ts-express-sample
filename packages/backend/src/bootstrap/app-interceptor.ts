@@ -1,66 +1,73 @@
-import { ParameterizedContext, Next } from 'koa';
-import { LOGGER, HttpCodes, CustomError, CustomResult, getTraceId } from '@demo/app-common';
-import { IStateResult } from '../domain/types';
+import * as fs from 'fs-extra';
+import { Request, Response, NextFunction } from 'express';
+import { LOGGER, HttpCodes, CustomError, CustomResult, getTraceId, CustomValidator } from '@demo/app-common';
+import { ICustomExpressRequest } from '../application/application-types';
 
 export class AppInterceptor {
-	/**
-	 * Before starting request handler
-	 * @param ctx 
-	 * @param next 
-	 */
-	static async beforeHandler(ctx: ParameterizedContext, next: Next): Promise<Next> {
+
+	/** Before starting request handler */
+	static async beforeHandler(req: Request, res: Response, next: NextFunction): Promise<any> {
 		LOGGER.info('-----------------------------------------------------------');
-		LOGGER.info(`${ctx.method} ${ctx.path} - start`);
-		return next();
+		LOGGER.info(`${req.method} ${req.path} - start`);
+		await next();
 	}
 
-
-	static async errorHandler(ctx: ParameterizedContext, next: Next): Promise<void> {
-		try {
-			await next();
-		} catch (ex) {
-			let error: CustomError = ex;
-			if (!(ex instanceof CustomError)) {
-				LOGGER.error(ex.stack);
-				error = new CustomError('', ex.message);
-			}
-			const str = `${ctx.method} ${ctx.originalUrl} - ${error.httpStatus} [${error.type}] ${error.message}`;
-			if (error?.isException()) {
-				LOGGER.error(str);
-			} else {
-				LOGGER.warn(str);
-			}
-			ctx.status = error.httpStatus;
-			ctx.body = new CustomResult()
-				.withTraceId(getTraceId())
-				.withCode(error.code)
-				.withMessage(error.message);
+	/** Complete request */
+	static async completeHandler(req: Request, res: Response, next: NextFunction): Promise<any> {
+		const r = res.locals['result'] as CustomResult;
+		if (!r) {
+			return next();
 		}
+		LOGGER.info(`${req.method} ${req.originalUrl} - 200`);
+		r.traceId = getTraceId();
+		res.status(HttpCodes.OK).json(r);
 	}
-	/**
-	 * Complete request
-	 * @param ctx 
-	 * @param next 
-	 */
-	static async completeHandler(ctx: ParameterizedContext<IStateResult>, next: Next): Promise<void> {
-		if (!ctx.state.result) {
-			next();
-			return;
+
+	/** Error handler */
+	static async errorHandler(ex: any, req: Request, res: Response, next: NextFunction): Promise<any> {
+		let error: CustomError = ex;
+		if (!(ex instanceof CustomError)) {
+			LOGGER.error(ex.stack);
+			error = new CustomError('', ex.message);
+		}
+		const result = new CustomResult()
+			.withTraceId(getTraceId())
+			.withCode(error.code)
+			.withMessage(error.message);
+
+		res.status(error.httpStatus).json(result);
+
+		const str = `${req.method} ${req.originalUrl} - ${error.httpStatus} [${error.type}] ${error.message}`;
+		if (error?.isException()) {
+			LOGGER.error(str);
+		} else {
+			LOGGER.warn(str);
 		}
 
-		LOGGER.info(`${ctx.method} ${ctx.originalUrl} - 200`);
-		ctx.state.result.traceId = getTraceId();
-		ctx.status = HttpCodes.OK;
-		ctx.body = ctx.state.result;
+		const cReq = <ICustomExpressRequest>req;
+		const tasks: Array<any> = [];
+		if (cReq.file) {
+			tasks.push(fs.unlink(cReq.file.path));
+		}
+		if (cReq.files) {
+			const files = Object.keys(cReq.files);
+			files.forEach((x) => {
+				const ary = cReq.files[x];
+				if (CustomValidator.nonEmptyArray(ary)) {
+					ary.forEach((f) => tasks.push(fs.unlink(f.path)));
+				}
+			});
+		}
+		if (CustomValidator.nonEmptyArray(tasks)) {
+			Promise.all(tasks).catch((ex) => LOGGER.error(ex.stack));
+		}
+
 	}
 
-	/**
-	 * Path not found handler
-	 * @param ctx 
-	 */
-	static async notFoundHandler(ctx: ParameterizedContext): Promise<void> {
-		LOGGER.info(`${ctx.method} ${ctx.originalUrl} - 404 Path not found`);
-		ctx.status = 404;
-		ctx.body = `${ctx.method} ${ctx.originalUrl} - 404 Path not found`;
+	/** Path not found handler */
+	static async notFoundHandler(req: Request, res: Response): Promise<any> {
+		const str = `${req.method} ${req.originalUrl} - 404 Path not found`;
+		LOGGER.info(str);
+		res.status(HttpCodes.NOT_FOUND).send(str);
 	}
 }
