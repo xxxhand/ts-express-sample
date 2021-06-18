@@ -1,9 +1,11 @@
 import { Schema, Model, ConnectOptions, Mongoose, Connection, Document } from 'mongoose';
+import { MongoClient } from 'mongodb';
 import { IMongooseClient, TNullable } from '../custom-types';
 import { logger as LOGGER } from '../custom-tools/custom-logger';
 import { customArgvs } from '../custom-tools/custom-argvs';
 import { CustomValidator } from '../custom-tools/custom-validator';
 import { CustomUtils } from '../custom-tools/custom-utils';
+
 
 export class CustomMongooseClient implements IMongooseClient {
 	private _uri?: string;
@@ -32,6 +34,14 @@ export class CustomMongooseClient implements IMongooseClient {
 		}
 		this._instance = new Mongoose();
 	}
+
+	getNativeClient = (): MongoClient => {
+		if (!this._conn) {
+			throw new Error('Connection instance is null');
+		}
+		return this._conn.getClient();
+	}
+
 	close = async (): Promise<void> => {
 		this._conn?.removeAllListeners();
 		await this._conn?.close();
