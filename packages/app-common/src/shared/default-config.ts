@@ -42,6 +42,41 @@ let _config: IConfig;
 try {
 	const data = fs.readFileSync(_configPath);
 	_config = <IConfig>JSON.parse(data.toString('utf-8'));
+
+	// Read DB config from process.env if sets...
+	if (CustomValidator.nonEmptyString(process.env.X_DEF_MONGO_URI)) {
+		_config.DEFAULT_MONGO.URI = <string>process.env.X_DEF_MONGO_URI;
+	}
+	if (CustomValidator.nonEmptyString(process.env.X_DEF_MONGO_USER)) {
+		_config.DEFAULT_MONGO.USER = process.env.X_DEF_MONGO_USER;
+	}
+	if (CustomValidator.nonEmptyString(process.env.X_DEF_MONGO_PASS)) {
+		_config.DEFAULT_MONGO.PASS = process.env.X_DEF_MONGO_PASS;
+	}
+	if (CustomValidator.nonEmptyString(process.env.X_DEF_MONGO_POOL_SIZE)) {
+		_config.DEFAULT_MONGO.POOL_SIZE = Number.parseInt(<string>process.env.X_DEF_MONGO_POOL_SIZE, 10);
+	}
+	if (CustomValidator.nonEmptyString(process.env.X_DEF_MONGO_DB_NAME)) {
+		_config.DEFAULT_MONGO.DB_NAME = <string>process.env.X_DEF_MONGO_DB_NAME;
+	}
+
+	// Read Redis config from process.env if sets...
+	if (CustomValidator.nonEmptyString(process.env.X_DEF_REDIS_URI)) {
+		_config.DEFAULT_REDIS.URI = <string>process.env.X_DEF_REDIS_URI;
+	}
+	if (CustomValidator.nonEmptyString(process.env.X_DEF_REDIS_HOST)) {
+		_config.DEFAULT_REDIS.HOST = <string>process.env.X_DEF_MONGO_HOST;
+	}
+	if (CustomValidator.nonEmptyString(process.env.X_DEF_REDIS_PASS)) {
+		_config.DEFAULT_REDIS.PASS = process.env.X_DEF_REDIS_PASS;
+	}
+	if (CustomValidator.nonEmptyString(process.env.X_DEF_REDIS_PASS)) {
+		_config.DEFAULT_REDIS.PORT = Number.parseInt(<string>process.env.X_DEF_REDIS_PORT, 10);
+	}
+	if (CustomValidator.nonEmptyString(process.env.X_DEF_REDIS_DB_NAME)) {
+		_config.DEFAULT_REDIS.DB_NAME = Number.parseInt(<string>process.env.X_DEF_REDIS_DB_NAME, 10);
+	}
+		
 } catch (ex) {
 	LOGGER.error(ex.stack);
 	throw ex;
