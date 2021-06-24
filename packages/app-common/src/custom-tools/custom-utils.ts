@@ -95,7 +95,7 @@ export class CustomUtils {
    * Deep copy
    * @returns {object}
    */
-	public static deepClone(obj: any) {
-		return lodash.cloneDeep(obj);
+	public static deepClone<T = any>(obj: T): T {
+		return lodash.cloneDeep(obj) as T;
 	}
 }
