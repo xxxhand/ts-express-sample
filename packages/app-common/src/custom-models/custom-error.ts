@@ -71,55 +71,71 @@ const _codeMap = new Map<string, ICodeObject>()
 	});
 
 export class CustomError extends Error {
-    public type: string;
-    public code: number;
-    public message: string;
-    public name: string;
-    public httpStatus: number;
+	public type: string = '';
+	public code: number = 99999;
+	public message: string = '';
+	public name: string = '';
+	public httpStatus: number = 400;
 
-    constructor(codeType: string, replaceString: string = '') {
-    	super();
-    	const err = CustomError.getCode(codeType);
-    	this.type = err.code != 99999 ? codeType : ErrorCodes.ERR_EXCEPTION;
-    	this.code = err.code;
-    	this.message = replaceString || err.message;
-    	this.name = this.constructor.name;
-    	this.httpStatus = err.httpStatus;
-    }
+	constructor(codeType: string, replaceString: string = '') {
+		super();
+		this.useError(codeType, replaceString);
+	}
 
-    public isSuccess(): boolean {
-    	return Object.is(this.code, 0);
-    }
+	public isSuccess(): boolean {
+		return Object.is(this.code, 0);
+	}
 
-    public isException(): boolean {
-    	return Object.is(this.code, 99999);
-    }
+	public isException(): boolean {
+		return Object.is(this.code, 99999);
+	}
 
-    public static mergeCodes(codes: Array<ICodeObject>): void {
-    	if (!Array.isArray(codes) || codes.length === 0) {
-    		throw new Error('Cannot merge with an empty array');
-    	}
-    	for (const c of codes) {
-    		if (!_validateCodeFormat(c)) {
-    			throw new Error('Illegal error code format');
-    		}
-    		if (_codeMap.has(c.alias)) {
-    			throw new Error(`Duplicate key ${c.alias} was defined`);
-    		}
-    		_codeMap.set(c.alias, c);
-    	}
-    }
+	public useError(codeType: string, replaceString: string = ''): CustomError {
+		const err = CustomError.getCode(codeType);
+		this.type = err.code != 99999 ? codeType : ErrorCodes.ERR_EXCEPTION;
+		this.code = err.code;
+		this.message = replaceString || err.message;
+		this.name = this.constructor.name;
+		this.httpStatus = err.httpStatus;
+		return this;
+	}
 
-    public static getCode(codeType: string = ''): ICodeObject {
-    	let err = _codeMap.get(codeType);
-    	if (!err) {
-    		err = {
-    			alias: ErrorCodes.ERR_EXCEPTION,
-    			code: 99999,
-    			httpStatus: 500,
-    			message: codeType || 'Ops! Exception', 
-    		};
-    	}
-    	return err;
-    }
+	public static mergeCodes(codes: Array<ICodeObject>): void {
+		if (!Array.isArray(codes) || codes.length === 0) {
+			throw new Error('Cannot merge with an empty array');
+		}
+		for (const c of codes) {
+			if (!_validateCodeFormat(c)) {
+				throw new Error('Illegal error code format');
+			}
+			if (_codeMap.has(c.alias)) {
+				throw new Error(`Duplicate key ${c.alias} was defined`);
+			}
+			_codeMap.set(c.alias, c);
+		}
+	}
+
+	public static getCode(codeType: string = ''): ICodeObject {
+		let err = _codeMap.get(codeType);
+		if (!err) {
+			err = {
+				alias: ErrorCodes.ERR_EXCEPTION,
+				code: 99999,
+				httpStatus: 500,
+				message: codeType || 'Ops! Exception',
+			};
+		}
+		return err;
+	}
+
+	public static fromInstance(ex: unknown): CustomError {
+		if (ex instanceof CustomError) {
+			return ex;
+		}
+		let msg = 'Not caught error instance...';
+		if (ex instanceof Error) {
+			msg = ex.message;
+		}
+		return new CustomError('', msg);
+	}
 }
