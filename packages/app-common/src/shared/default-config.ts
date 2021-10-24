@@ -78,7 +78,10 @@ try {
 	}
 		
 } catch (ex) {
-	LOGGER.error(ex.stack);
+	if (ex instanceof Error) {
+		LOGGER.error(ex.stack);
+	}
+	
 	throw ex;
 }
 
