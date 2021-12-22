@@ -28,7 +28,7 @@ export class AppInitializer {
 		const client = new CustomMongooseClient(defMongo.URI, {
 			user: defMongo.USER,
 			pass: defMongo.PASS,
-			poolSize: defMongo.POOL_SIZE,
+			maxPoolSize: defMongo.POOL_SIZE,
 			dbName: defMongo.DB_NAME,
 		});
 		client.ignoreClearEnvironments('production', 'prod');
