@@ -1,9 +1,8 @@
-import { Request, Response, NextFunction, Router } from 'express';
+import { Response, NextFunction, Router } from 'express';
 import { injectable } from 'inversify';
 import {
 	CustomClassBuilder,
 	CustomResult,
-	defaultContainer,
 	lazyInject,
 	TNullable,
 	CustomUtils,
@@ -35,8 +34,7 @@ export class ClientAuthController {
 	}
 
 	public static build(): Router {
-		defaultContainer.bind(ClientAuthController).toSelf().inSingletonScope();
-		const _ctrl = defaultContainer.get(ClientAuthController);
+		const _ctrl = new ClientAuthController();
 		const r = Router();
 		r.route('/client-auth')
 			.post(handleExpressAsync(_ctrl.create));
