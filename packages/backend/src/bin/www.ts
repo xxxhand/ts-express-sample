@@ -1,7 +1,7 @@
 global.Promise = require('bluebird');
 require('dotenv').config();
 import * as http from 'http';
-import { LOGGER, customArgvs } from '@demo/app-common';
+import { LOGGER, customArgvs, defConf } from '@demo/app-common';
 import { AppInitializer } from '../bootstrap/app-initializer';
 import { App } from '../bootstrap/app';
 import { AppWebSocket } from '../bootstrap/app-web-socket';
@@ -16,7 +16,8 @@ async function main() {
 
 	new AppWebSocket()
 		.useHttpServer(_core)
-		.loadNamespaces();
+		.loadNamespaces()
+		.accept(defConf.ENABLE_WS);
     
   
 	_core.listen(_port);

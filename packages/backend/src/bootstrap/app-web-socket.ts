@@ -48,4 +48,11 @@ export class AppWebSocket {
   	LOGGER.info('Close socket server...');
   	this._server?.close();
   }
+
+	accept = (enabled: boolean = false): void => {
+		if (!enabled) {
+			LOGGER.info('Disable websocket server...');
+			this.close();
+		}
+	}
 }
