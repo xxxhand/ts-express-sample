@@ -2,15 +2,12 @@ global.Promise = require('bluebird');
 require('dotenv').config();
 import * as http from 'http';
 import { LOGGER, customArgvs, defConf } from '@demo/app-common';
-import { AppInitializer } from '../bootstrap/app-initializer';
 import { App } from '../bootstrap/app';
 import { AppWebSocket } from '../bootstrap/app-web-socket';
 
 async function main() {
 	LOGGER.info('Initial server start...');
-	await AppInitializer.tryDbClient();
-	await AppInitializer.tryRedis();
-	AppInitializer.tryInjector();
+	await App.tryInitial();
 	const _port = Number.parseInt(customArgvs.port, 10);
 	const _core = http.createServer(new App().app);
 

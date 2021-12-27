@@ -1,6 +1,7 @@
 import * as path from 'path';
 import express from 'express';
 import { TNullable } from '@demo/app-common';
+import { AppInitializer } from './app-initializer';
 import { AppInterceptor } from './app-interceptor';
 import * as appTracer from './app-request-tracer';
 import {V1Router } from '../application/workflows/v1-router';
@@ -21,6 +22,12 @@ export class App {
 			throw new Error('Application is null');
 		}
 		return this._app;
+	}
+
+	public static tryInitial = async () => {
+		await AppInitializer.tryDbClient();
+		await AppInitializer.tryRedis();
+		AppInitializer.tryInjector();
 	}
 
 	private _init(): void {

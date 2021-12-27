@@ -1,12 +1,10 @@
 import * as superTest from 'supertest';
-import { CustomError, CustomUtils, defaultContainer, IMongooseClient, commonInjectorCodes } from '@demo/app-common';
-import { AppInitializer } from '../src/bootstrap/app-initializer';
-import { App } from '../src/bootstrap/app';
-import { InjectorCodes } from '../src/domain/enums/injector-codes';
-import { ErrorCodes } from '../src/domain/enums/error-codes';
-import { IClientRepository } from '../src/domain/repositories/i-client-repository';
+import * as _ from 'lodash';
+import { DbHelper } from './__helpers__/db-helper';
+import { AppHelper } from './__helpers__/app-helper';
 
 const _ENDPOINT = '/api/v1/client-auth';
+
 interface IBody {
 	name: string;
 	callbackUrl: string;
@@ -14,95 +12,84 @@ interface IBody {
 
 describe('Register credential spec', () => {
 	let agentClient: superTest.SuperAgentTest;
-	let clientRepo: IClientRepository;
-	let db: IMongooseClient;
+	const dbHelper = new DbHelper();
+	const CLIENT_COL = 'clientcredentials';
+	const colNames = [CLIENT_COL];
 	const defaultBody: IBody = {
 		name: 'iLearning',
 		callbackUrl: 'https://xxx.ccc.com',
 	};
 	beforeAll(async (done) => {
-		await AppInitializer.tryDbClient();
-		AppInitializer.tryInjector();
-		db = defaultContainer.getNamed(commonInjectorCodes.I_MONGOOSE_CLIENT, commonInjectorCodes.DEFAULT_MONGO_CLIENT);
-		await db.clearData();
-		agentClient = superTest.agent(new App().app);
-		clientRepo = defaultContainer.get<IClientRepository>(InjectorCodes.I_CLIENT_REPO);
-
+		await dbHelper.tryOpen();
+		await dbHelper.clearData(colNames);
+		agentClient = await AppHelper.getInstance();
 		done();
 	});
 	afterAll(async (done) => {
-		await db.clearData();
-		await db.close();
+		await dbHelper.clearData(colNames);
+		await dbHelper.tryClose();
 		done();
 	});
 	describe('Required fileds', () => {
 		test('[2001] Parameter "name" is empty', async (done) => {
-			const b = CustomUtils.deepClone<IBody>(defaultBody);
+			const b = _.cloneDeep(defaultBody);
 			b.name = '';
 			const res = await agentClient
 				.post(_ENDPOINT)
 				.send(b);
 
-			const err = new CustomError(ErrorCodes.CLIENT_NAME_INVALID);
-			expect(res.status).toBe(err.httpStatus);
-			expect(res.body).toEqual({
-				traceId: expect.any(String),
-				code: err.code,
-				message: err.message,
-			});
+			expect(res.status).toBe(400);
+			expect(res.body.code).toBe(2001);
+			expect(res.body.message).toBe('無效客戶名稱');
+
 			done();
 		});
 		test('[2004] Parameter "callbackUrl" is empty', async (done) => {
-			const b = CustomUtils.deepClone<IBody>(defaultBody);
+			const b = _.cloneDeep(defaultBody);
 			b.callbackUrl = '';
 			const res = await agentClient
 				.post(_ENDPOINT)
 				.send(b);
 
-			const err = new CustomError(ErrorCodes.CLIENT_CALLBACK_INVALID);
-			expect(res.status).toBe(err.httpStatus);
-			expect(res.body).toEqual({
-				traceId: expect.any(String),
-				code: err.code,
-				message: err.message,
-			});
+			expect(res.status).toBe(400);
+			expect(res.body.code).toBe(2004);
+			expect(res.body.message).toBe('無效客戶回調網址');
+
 			done();
 		});
 		test('[2004] Parameter "callbackUrl" is invalid', async (done) => {
-			const b = CustomUtils.deepClone<IBody>(defaultBody);
+			const b = _.cloneDeep(defaultBody);
 			b.callbackUrl = 'mqtt://sss.com';
 			const res = await agentClient
 				.post(_ENDPOINT)
 				.send(b);
 
-			const err = new CustomError(ErrorCodes.CLIENT_CALLBACK_INVALID);
-			expect(res.status).toBe(err.httpStatus);
-			expect(res.body).toEqual({
-				traceId: expect.any(String),
-				code: err.code,
-				message: err.message,
-			});
+			expect(res.status).toBe(400);
+			expect(res.body.code).toBe(2004);
+			expect(res.body.message).toBe('無效客戶回調網址');
+
 			done();
 		});
 	});
 	describe('Success', () => {
-		test('[success]', async (done) => {
+		test.only('[success]', async (done) => {
 			const res = await agentClient
 				.post(_ENDPOINT)
 				.send(defaultBody);
 
 			expect(res.status).toBe(200);
 			expect(res.body).toHaveProperty('result');
-			expect(res.body.result).toEqual({
-				clientId: expect.any(String),
-				clientSecret: expect.any(String),
-				callbackUrl: defaultBody.callbackUrl,
-				name: defaultBody.name,
-			});
-			const c = await clientRepo.findOne(res.body.result.clientId);
+			expect(res.body.result.clientId).toEqual(expect.any(String));
+			expect(res.body.result.clientSecret).toEqual(expect.any(String));
+			expect(res.body.result.callbackUrl).toBe(defaultBody.callbackUrl);
+			expect(res.body.result.name).toBe(defaultBody.name);
+
+			const col = dbHelper.getCollection(CLIENT_COL);
+			const c = await col.findOne({ 'clientId': res.body.result.clientId });
 			expect(c).toBeTruthy();
 			expect(c?.name).toBe(defaultBody.name);
 			expect(c?.callbackUrl).toBe(defaultBody.callbackUrl);
+
 			done();
 		});
 	});
