@@ -1,6 +1,6 @@
 {
   "name": "@demo/backend",
-  "version": "0.0.5",
+  "version": "0.0.6",
   "description": "> TODO: description",
   "author": "hand_wu <Hand_Wu@compal.com>",
   "homepage": "https://github.com/xxxhand/ts-mono-sample#readme",
@@ -31,7 +31,7 @@
     "url": "https://github.com/xxxhand/ts-mono-sample/issues"
   },
   "dependencies": {
-    "@demo/app-common": "^0.0.5",
+    "@demo/app-common": "^0.0.6",
     "bluebird": "^3.7.2",
     "dotenv": "^10.0.0",
     "express": "^4.17.1",
