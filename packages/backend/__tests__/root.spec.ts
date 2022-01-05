@@ -16,7 +16,7 @@ describe('Index test', () => {
 			traceId: expect.any(String),
 			code: 0,
 			message: '',
-			result: 'Hello world!!',
+			result: 'Hello world',
 		});
 
 		done();
