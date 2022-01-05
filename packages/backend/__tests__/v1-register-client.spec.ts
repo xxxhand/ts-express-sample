@@ -13,7 +13,7 @@ interface IBody {
 describe('Register credential spec', () => {
 	let agentClient: superTest.SuperAgentTest;
 	const dbHelper = new DbHelper();
-	const CLIENT_COL = 'clientcredentials';
+	const CLIENT_COL = 'ClientCredentials';
 	const colNames = [CLIENT_COL];
 	const defaultBody: IBody = {
 		name: 'iLearning',
