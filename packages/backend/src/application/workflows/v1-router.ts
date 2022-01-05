@@ -9,11 +9,11 @@ export class V1Router {
 	constructor() {
 		this._init();
 	}
-	
+
 	private _init = (): void => {
 		this.router
 			.all('/', async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-				res.locals['result'] = new CustomResult<string>().withResult('Hello world!!');
+				res.locals['result'] = new CustomResult<string>().withResult('Hello world!!!');
 				await next();
 			});
 		this.router
