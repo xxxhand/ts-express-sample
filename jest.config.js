@@ -28,6 +28,7 @@ module.exports = {
 		"**/?(*.)+(spec|test).[jt]s?(x)",
 		"!**/__helpers__/**"
 	],
+	testResultsProcessor: 'jest-sonar-reporter',
 	reporters: [
 		'default',
 		[
